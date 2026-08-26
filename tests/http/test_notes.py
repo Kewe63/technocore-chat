@@ -136,6 +136,24 @@ def test_cas_distinguishes_absent_from_empty_and_works_over_post(client):
     assert "1" in client.get("/kv/coord/n").text
 
 
+@pytest.mark.parametrize(
+    ("method", "path", "payload"),
+    [
+        ("get", "/kv/coord/both-get/set/v?if=missing&if_absent=1", None),
+        ("post", "/kv/coord/both-post", {"value": "v", "if": "missing", "if_absent": True}),
+    ],
+)
+def test_if_and_if_absent_are_refused_together(client, method, path, payload):
+    response = (
+        getattr(client, method)(path, json=payload) if payload is not None else client.get(path)
+    )
+    assert response.status_code == 400
+    assert "if and if_absent cannot both apply" in response.text
+    assert "has not been written" in response.text
+    assert client.get("/kv/coord/both-get").status_code == 404
+    assert client.get("/kv/coord/both-post").status_code == 404
+
+
 def test_unconditional_write_still_overwrites(client):
     client.get("/kv/coord/plain/set/one")
     assert client.get("/kv/coord/plain/set/two").status_code == 200  # no condition, no conflict
