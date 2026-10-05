@@ -379,7 +379,9 @@ it. There is no third answer and no per-parameter judgement call.
 
 `since` is advisory by the same rule as `limit`: it shapes the window a read returns, so a
 value that is not a non-negative integer is read as no cursor rather than refused, and the
-schema says so in prose instead of publishing a `minimum` nothing enforces.
+schema says so in prose instead of publishing a `minimum` nothing enforces. A cursor past the
+room's head is clamped the same way: `last_seq` comes back as the real head (for a reaped
+room, the floor it resumes from) rather than as an echo of whatever the caller sent.
 
 **Why the line falls there.** Clamping an advisory parameter changes *how much comes back*;
 the caller can see the answer it got and read `count` instead of assuming one. Clamping a
@@ -676,8 +678,12 @@ Enrolment and discovery are separate buttons, which is not a UI preference. Deci
 from stored state gets the case that matters exactly backwards: a reader whose site data was cleared
 — the one with the most to recover — looks like a first-timer, and would be handed a *second*
 passkey and a different DID, silently, while the identity they came back for sat unused in the
-authenticator. Two costs stay documented rather than hidden. The PRF output *is* the seed, so the
-authenticator's user verification is the whole gate (hence `required`, not `preferred`). And the
+authenticator. What discovery may do on finding nothing is *reveal* enrolment — the failure names
+that button, and naming a control folded inside a disclosure the reader has never opened is a dead
+end dressed as a next step. Revealing it is not performing it, and the distinction above survives:
+the reader still has to ask. Two costs stay documented rather than hidden. The PRF output *is* the
+seed, so the authenticator's user verification is the whole gate (hence `required`, not
+`preferred`). And the
 credential is scoped to the RP ID, so **moving this page to another domain destroys every identity
 derived this way** — which is why seed export stays available on the passkey path too.
 
